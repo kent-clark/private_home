@@ -2,18 +2,32 @@ from tkinter import *
 from kasa import SmartStrip
 from kasa import SmartPlug
 import asyncio
+from functools import partial
 
 root = Tk()
 
-# All the lights and sockets in my house
-bedroom_light = SmartPlug("192.168.1.64")
-mirror_light = SmartPlug("192.168.1.65")
-vanity_light = SmartPlug("192.168.1.66")
-bathroom_light = SmartPlug("192.168.1.67")
-asyncio.run(bedroom_light.update())
-asyncio.run(mirror_light.update())
-asyncio.run(vanity_light.update())
-asyncio.run(bathroom_light.update())
+# The ip addresses of all the light switches
+light_ip_addresses = [
+    "192.168.1.64",
+    "192.168.1.65",
+    "192.168.1.66",
+    "192.168.1.67",
+    "192.168.1.70",
+    "192.168.1.71",
+    "192.168.1.72",
+    "192.168.1.73",
+    "192.168.1.74",
+]
+
+# Initialize all the light switch objects
+light_switches = []
+
+for light_ip in light_ip_addresses:
+    light_switch = SmartPlug(light_ip)
+    asyncio.run(light_switch.update())
+    print(f"{light_switch.alias} is on: {light_switch.is_on}")
+    light_switches.append(light_switch)
+
 
 # Turn on the light
 def lightOn(light_switch):
@@ -27,15 +41,13 @@ def lightOff(light_switch):
     asyncio.run(light_switch.turn_off())
     print(light_switch.alias + " off")
 
-cur_row = 0
-Label(root, text=mirror_light.alias).grid(row=cur_row, column=0)
-Button(root, text="on", command=lambda: lightOn(mirror_light), fg="green").grid(row=cur_row, column=1)
-Button(root, text="off", command=lambda: lightOff(mirror_light), fg="red").grid(row=cur_row, column=2)
-cur_row += 1
 
-Label(root, text=bathroom_light.alias).grid(row=cur_row, column=0)
-Button(root, text="on", command=lambda: lightOn(bathroom_light), fg="green").grid(row=cur_row, column=1)
-Button(root, text="off", command=lambda: lightOff(bathroom_light), fg="red").grid(row=cur_row, column=2)
-cur_row += 1
+# Create the UI
+cur_row = 0
+for light in light_switches:
+    Label(root, text=light.alias).grid(row=cur_row, column=0)
+    Button(root, text="on", command=partial(lightOn, light), fg="green").grid(row=cur_row, column=1)
+    Button(root, text="off", command=partial(lightOff, light), fg="red").grid(row=cur_row, column=2)
+    cur_row += 1
 
 root.mainloop()
