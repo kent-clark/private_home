@@ -25,29 +25,44 @@ light_switches = []
 for light_ip in light_ip_addresses:
     light_switch = SmartPlug(light_ip)
     asyncio.run(light_switch.update())
-    print(f"{light_switch.alias} is on: {light_switch.is_on}")
     light_switches.append(light_switch)
 
 
-# Turn on the light
-def lightOn(light_switch):
-    asyncio.run(light_switch.update())
-    asyncio.run(light_switch.turn_on())
-    print(light_switch.alias + " on")
+switch_buttons = {}
+# Toggle the light
+def toggle(switch):
+    asyncio.run(switch.update())
+    button = switch_buttons[switch]
 
-# Turn off the light
-def lightOff(light_switch):
-    asyncio.run(light_switch.update())
-    asyncio.run(light_switch.turn_off())
-    print(light_switch.alias + " off")
+    if switch.is_off:
+        asyncio.run(switch.turn_on())
+        print(f"{switch.alias} is turned on")
+        button.config(fg="green")
+    else:
+        asyncio.run(switch.turn_off())
+        print(f"{switch.alias} is turned off")
+        button.config(fg="red")
 
 
 # Create the UI
 cur_row = 0
-for light in light_switches:
-    Label(root, text=light.alias).grid(row=cur_row, column=0)
-    Button(root, text="on", command=partial(lightOn, light), fg="green").grid(row=cur_row, column=1)
-    Button(root, text="off", command=partial(lightOff, light), fg="red").grid(row=cur_row, column=2)
+for light_switch in light_switches:
+    toggle_button = Button(
+        root,
+        text=light_switch.alias,
+        command=partial(toggle, light_switch),
+        fg=("green" if light_switch.is_on else "red"),
+        padx = 15,
+        pady = 15,
+    )
+    switch_buttons[light_switch] = toggle_button
+    toggle_button.grid(row=cur_row, column=0, sticky='nesw')
     cur_row += 1
 
+# Make all buttons auto resize
+for i in range(len(light_ip_addresses)):
+    Grid.rowconfigure(root, i, weight=1)
+Grid.columnconfigure(root, 0, weight=1)
+
+# Start the main loop
 root.mainloop()
