@@ -7,7 +7,7 @@ Usage:
 
 from setuptools import setup
 
-APP = ['main.py']
+APP = ['my_home.py']
 DATA_FILES = []
 OPTIONS = {}
 

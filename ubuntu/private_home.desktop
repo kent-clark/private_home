@@ -1,5 +1,5 @@
 [Desktop Entry]
 Name=PrivateHome
-Exec=sh -c "/home/kent/work/private_home/ubuntu/dist/main"
+Exec=sh -c "/home/kent/work/private_home/ubuntu/dist/my_home/my_home"
 Terminal=false
 Type=Application
