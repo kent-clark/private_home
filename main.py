@@ -6,7 +6,8 @@ from kasa import SmartPlug
 import asyncio
 from functools import partial
 
-root = Tk()
+root_window = Tk()
+root_window.title("Private Home")
 
 # The ip addresses of all the light switches
 light_ip_addresses = [
@@ -31,7 +32,6 @@ for light_ip in light_ip_addresses:
 
 
 switch_buttons = {}
-# Toggle the light
 def toggle(switch):
     asyncio.run(switch.update())
     button = switch_buttons[switch]
@@ -45,27 +45,32 @@ def toggle(switch):
         print(f"{switch.alias} is turned off")
         button.config(fg="red")
 
+def initUI():
+    # Create the UI
+    cur_row = 0
+    for light_switch in light_switches:
+        toggle_button = Button(
+            root_window,
+            text=light_switch.alias,
+            command=partial(toggle, light_switch),
+            fg=("green" if light_switch.is_on else "red"),
+            padx = 50,
+            pady = 30,
+        )
+        switch_buttons[light_switch] = toggle_button
+        toggle_button.grid(row=cur_row, column=0, sticky='nesw')
+        cur_row += 1
 
-# Create the UI
-cur_row = 0
-for light_switch in light_switches:
-    toggle_button = Button(
-        root,
-        text=light_switch.alias,
-        command=partial(toggle, light_switch),
-        fg=("green" if light_switch.is_on else "red"),
-        padx = 15,
-        pady = 15,
-    )
-    switch_buttons[light_switch] = toggle_button
-    toggle_button.grid(row=cur_row, column=0, sticky='nesw')
-    cur_row += 1
+    # Make all buttons auto resize
+    for i in range(len(light_ip_addresses)):
+        Grid.rowconfigure(root_window, i, weight=1)
+    Grid.columnconfigure(root_window, 0, weight=1)
 
-# Make all buttons auto resize
-for i in range(len(light_ip_addresses)):
-    Grid.rowconfigure(root, i, weight=1)
-Grid.columnconfigure(root, 0, weight=1)
+    # Center the window
+    root_window.eval('tk::PlaceWindow . center')
 
 
 if __name__=="__main__":
-    root.mainloop()
+    initUI()
+    root_window.mainloop()
+
