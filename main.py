@@ -94,9 +94,9 @@ class RootGrid(GridLayout):
         Clock.schedule_interval(refresh, 5)
                 
 
-class PrivateHomeApp(App):
+class XHomeApp(App):
     def build(self):
         return RootGrid()
 
 if __name__ == "__main__":
-    PrivateHomeApp().run()
+    XHomeApp().run()

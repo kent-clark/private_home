@@ -3,4 +3,4 @@ cd "$(dirname "$0")"
 
 pip3 install python-kasa --pre
 pyinstaller --copy-metadata=python-kasa -y ../main.py
-cp private_home.desktop ~/.local/share/applications
+cp xhome.desktop ~/.local/share/applications
