@@ -3,14 +3,11 @@
 from tkinter import *
 from kasa import SmartStrip
 from kasa import SmartPlug
-import asyncio
 from functools import partial
+import asyncio
 
-root_window = Tk()
-root_window.title("Private Home")
-
-# The ip addresses of all the light switches
-light_ip_addresses = [
+# The ip addresses of the plugs
+plug_ip_addresses = [
     "192.168.1.64",
     "192.168.1.65",
     "192.168.1.66",
@@ -22,51 +19,72 @@ light_ip_addresses = [
     "192.168.1.74",
 ]
 
-# Initialize all the light switch objects
-light_switches = []
+# The ip addresses of the strips
+strip_ip_addresses = [
+    "192.168.1.68",
+]
 
-for light_ip in light_ip_addresses:
-    light_switch = SmartPlug(light_ip)
-    asyncio.run(light_switch.update())
-    light_switches.append(light_switch)
+root_window = Tk()
+plug_buttons = {}
 
 
-switch_buttons = {}
-def toggle(switch):
-    asyncio.run(switch.update())
-    button = switch_buttons[switch]
+def toggle(device, plug):
+    asyncio.run(device.update())
+    button = plug_buttons[plug]
 
-    if switch.is_off:
-        asyncio.run(switch.turn_on())
-        print(f"{switch.alias} is turned on")
+    if plug.is_off:
+        asyncio.run(plug.turn_on())
         button.config(fg="green")
     else:
-        asyncio.run(switch.turn_off())
-        print(f"{switch.alias} is turned off")
+        asyncio.run(plug.turn_off())
         button.config(fg="red")
 
+
 def initUI():
-    # Create the UI
     cur_row = 0
-    for light_switch in light_switches:
+
+    # Create buttons for plugs
+    for plug_ip in plug_ip_addresses:
+        smart_plug = SmartPlug(plug_ip)
+        asyncio.run(smart_plug.update())
+    
         toggle_button = Button(
             root_window,
-            text=light_switch.alias,
-            command=partial(toggle, light_switch),
-            fg=("green" if light_switch.is_on else "red"),
+            text=smart_plug.alias,
+            command=partial(toggle, smart_plug, smart_plug),
+            fg=("green" if smart_plug.is_on else "red"),
             padx = 50,
             pady = 30,
         )
-        switch_buttons[light_switch] = toggle_button
+        plug_buttons[smart_plug] = toggle_button
         toggle_button.grid(row=cur_row, column=0, sticky='nesw')
         cur_row += 1
 
+    # Create buttons for strips
+    for strip_ip in strip_ip_addresses:
+        smart_strip = SmartStrip(strip_ip)
+        asyncio.run(smart_strip.update())
+
+        for plug in smart_strip.children:
+            toggle_button = Button(
+                root_window,
+                text=plug.alias,
+                command=partial(toggle, smart_strip, plug),
+                fg=("green" if plug.is_on else "red"),
+                padx = 50,
+                pady = 30,
+            )
+            plug_buttons[plug] = toggle_button
+            toggle_button.grid(row=cur_row, column=0, sticky='nesw')
+            cur_row += 1
+
     # Make all buttons auto resize
-    for i in range(len(light_ip_addresses)):
+    for i in range(cur_row):
         Grid.rowconfigure(root_window, i, weight=1)
     Grid.columnconfigure(root_window, 0, weight=1)
 
-    # Center the window
+    # Config the window
+    root_window.title("Private Home")
     root_window.eval('tk::PlaceWindow . center')
 
 
