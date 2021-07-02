@@ -1,0 +1,7 @@
+anyio==3.2.1
+asyncclick==7.1.2.3
+idna==3.2
+importlib-metadata==4.6.0
+python-kasa==0.4.0.dev3
+sniffio==1.2.0
+zipp==3.4.1

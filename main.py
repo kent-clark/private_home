@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from tkinter import *
 from kasa import SmartStrip
 from kasa import SmartPlug
@@ -64,5 +66,6 @@ for i in range(len(light_ip_addresses)):
     Grid.rowconfigure(root, i, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
 
-# Start the main loop
-root.mainloop()
+
+if __name__=="__main__":
+    root.mainloop()
