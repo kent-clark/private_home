@@ -1,5 +1,5 @@
 [Desktop Entry]
 Name=XHome
-Exec=sh -c "/home/kent/work/private_home/ubuntu/dist/main/main"
+Exec=sh -c "/home/kent/work/xhome/ubuntu/dist/main/main"
 Terminal=false
 Type=Application
