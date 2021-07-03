@@ -34,19 +34,33 @@ strip_ip_addresses = [
 devices = []
 # A mapping of the buttons to the plugs
 button_plug = {}
+# A mapping of the led buttons to the plugs
+led_button_plug = {}
 
 
-# Toggle a plug on a device, and update the button color
+# Toggle a plug
 def toggle(device, button):
     asyncio.run(device.update())
     plug = button_plug[button]
 
-    if plug.is_off:
-        asyncio.run(plug.turn_on())
-        button.color = green
-    else:
+    if plug.is_on:
         asyncio.run(plug.turn_off())
         button.color = red
+    else:
+        asyncio.run(plug.turn_on())
+        button.color = green
+
+# Toggle a plug's led
+def toggle_led(device, button):
+    asyncio.run(device.update())
+    plug = led_button_plug[button]
+
+    if plug.led:
+        asyncio.run(plug.set_led(False))
+        button.color = red
+    else:
+        asyncio.run(plug.set_led(True))
+        button.color = green
 
 
 def refresh(delta_time):
@@ -54,19 +68,21 @@ def refresh(delta_time):
         asyncio.run(device.update())
     for button, plug in button_plug.items():
         button.color = green if plug.is_on else red
+    for led_button, plug in led_button_plug.items():
+        led_button.color = green if plug.led else red
 
 
 class RootGrid(GridLayout):
     def __init__(self, **kwargs):
         super(RootGrid, self).__init__(**kwargs)
-        self.cols = 1
+        self.cols = 2
 
-        # Create buttons for plugs
+        # Create buttons for plugs and their leds
         for plug_ip in plug_ip_addresses:
             smart_plug = SmartPlug(plug_ip)
             devices.append(smart_plug)
             asyncio.run(smart_plug.update())
-        
+
             toggle_button = Button(
                 text=smart_plug.alias,
                 color = green if smart_plug.is_on else red,
@@ -74,6 +90,14 @@ class RootGrid(GridLayout):
             toggle_button.bind(on_press=partial(toggle, smart_plug))
             button_plug[toggle_button] = smart_plug
             self.add_widget(toggle_button)
+
+            toggle_led_button = Button(
+                text='LED',
+                color = green if smart_plug.led else red,
+            )
+            toggle_led_button.bind(on_press=partial(toggle_led, smart_plug))
+            led_button_plug[toggle_led_button] = smart_plug
+            self.add_widget(toggle_led_button)
 
         # Create buttons for strips
         for strip_ip in strip_ip_addresses:
