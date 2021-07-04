@@ -10,6 +10,7 @@ from kivy.clock import Clock
 from kasa import SmartStrip
 from kasa import SmartPlug
 from functools import partial
+from threading import Thread
 import asyncio
 
 # The ip addresses of the plugs
@@ -37,40 +38,57 @@ button_plug = {}
 # A mapping of the led buttons to the plugs
 led_button_plug = {}
 
+def start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+loop = asyncio.new_event_loop()
+Thread(target=start_background_loop, args=(loop,), daemon=True).start()
+
+
+async def toggle_async(device, button):
+    plug = button_plug[button]
+
+    button.disabled = True
+    await plug.turn_off() if plug.is_on else await plug.turn_on()
+    await device.update()
+    button.disabled = False
+    button.color = green if plug.is_on else red
 
 # Toggle a plug
 def toggle(device, button):
-    asyncio.run(device.update())
-    plug = button_plug[button]
+    asyncio.run_coroutine_threadsafe(toggle_async(device, button), loop)
 
-    if plug.is_on:
-        asyncio.run(plug.turn_off())
-        button.color = red
-    else:
-        asyncio.run(plug.turn_on())
-        button.color = green
+# Toggle a plug's led
+async def toggle_led_async(device, button):
+    plug = led_button_plug[button]
+
+    button.disabled = True
+    await plug.set_led(False) if plug.led else await plug.set_led(True)
+    await device.update()
+    button.disabled = False
+    button.color = green if plug.led else red
+
 
 # Toggle a plug's led
 def toggle_led(device, button):
-    asyncio.run(device.update())
-    plug = led_button_plug[button]
-
-    if plug.led:
-        asyncio.run(plug.set_led(False))
-        button.color = red
-    else:
-        asyncio.run(plug.set_led(True))
-        button.color = green
+    asyncio.run_coroutine_threadsafe(toggle_led_async(device, button), loop)
 
 
-def refresh(delta_time):
+async def update_devices_async():
     for device in devices:
-        asyncio.run(device.update())
+        await device.update()
+
     for button, plug in button_plug.items():
         button.color = green if plug.is_on else red
+        button.disabled = False
     for led_button, plug in led_button_plug.items():
         led_button.color = green if plug.led else red
+        led_button.disabled = False
 
+def update_devices(delta_time):
+    asyncio.run_coroutine_threadsafe(update_devices_async(), loop)
+    pass
 
 class RootGrid(GridLayout):
     def __init__(self, **kwargs):
@@ -87,7 +105,7 @@ class RootGrid(GridLayout):
                 text=smart_plug.alias,
                 color = green if smart_plug.is_on else red,
             )
-            toggle_button.bind(on_press=partial(toggle, smart_plug))
+            toggle_button.bind(on_release=partial(toggle, smart_plug))
             button_plug[toggle_button] = smart_plug
             self.add_widget(toggle_button)
 
@@ -95,7 +113,7 @@ class RootGrid(GridLayout):
                 text='LED',
                 color = green if smart_plug.led else red,
             )
-            toggle_led_button.bind(on_press=partial(toggle_led, smart_plug))
+            toggle_led_button.bind(on_release=partial(toggle_led, smart_plug))
             led_button_plug[toggle_led_button] = smart_plug
             self.add_widget(toggle_led_button)
 
@@ -110,12 +128,12 @@ class RootGrid(GridLayout):
                     text=plug.alias,
                     color = green if plug.is_on else red,
                 )
-                toggle_button.bind(on_press=partial(toggle, smart_strip))
+                toggle_button.bind(on_release=partial(toggle, smart_strip))
                 button_plug[toggle_button] = plug
                 self.add_widget(toggle_button)
 
         # Start the refresh clock
-        Clock.schedule_interval(refresh, 5)
+        Clock.schedule_interval(update_devices, 2)
                 
 
 class XHomeApp(App):
