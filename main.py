@@ -90,17 +90,33 @@ def update_devices(delta_time):
     asyncio.run_coroutine_threadsafe(update_devices_async(), loop)
     pass
 
+
+smart_plugs = []
+smart_strips = []
+async def init_devices():
+    tasks = []
+    for plug_ip in plug_ip_addresses:
+        smart_plug = SmartPlug(plug_ip)
+        devices.append(smart_plug)
+        smart_plugs.append(smart_plug)
+        tasks.append(asyncio.create_task(smart_plug.update()))
+    for strip_ip in strip_ip_addresses:
+        smart_strip = SmartStrip(strip_ip)
+        devices.append(smart_strip)
+        smart_strips.append(smart_strip)
+        tasks.append(asyncio.create_task(smart_strip.update()))
+    await asyncio.gather(*tasks)
+
+
 class RootGrid(GridLayout):
     def __init__(self, **kwargs):
         super(RootGrid, self).__init__(**kwargs)
         self.cols = 2
 
-        # Create buttons for plugs and their leds
-        for plug_ip in plug_ip_addresses:
-            smart_plug = SmartPlug(plug_ip)
-            devices.append(smart_plug)
-            asyncio.run(smart_plug.update())
+        asyncio.run(init_devices())
 
+        # Create buttons for plugs and their LEDs
+        for smart_plug in smart_plugs:
             toggle_button = Button(
                 text=smart_plug.alias,
                 color = green if smart_plug.is_on else red,
@@ -118,11 +134,7 @@ class RootGrid(GridLayout):
             self.add_widget(toggle_led_button)
 
         # Create buttons for strips
-        for strip_ip in strip_ip_addresses:
-            smart_strip = SmartStrip(strip_ip)
-            devices.append(smart_strip)
-            asyncio.run(smart_strip.update())
-
+        for smart_strip in smart_strips:
             for plug in smart_strip.children:
                 toggle_button = Button(
                     text=plug.alias,
