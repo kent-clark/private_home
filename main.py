@@ -76,7 +76,7 @@ def toggle_led(device, button):
 
 
 async def update_devices_async():
-    tasks = [loop.create_task(device.update()) for device in devices]
+    tasks = [asyncio.create_task(device.update()) for device in devices]
     await asyncio.gather(*tasks)
 
     for button, plug in button_plug.items():
