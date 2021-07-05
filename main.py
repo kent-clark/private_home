@@ -76,8 +76,8 @@ def toggle_led(device, button):
 
 
 async def update_devices_async():
-    for device in devices:
-        await device.update()
+    tasks = [loop.create_task(device.update()) for device in devices]
+    await asyncio.gather(*tasks)
 
     for button, plug in button_plug.items():
         button.color = green if plug.is_on else red
